@@ -405,7 +405,7 @@
         const time = latest ? latest.time : "";
         const selected = conversation.id === activeConversationId;
         return `
-          <button class="chat-item" type="button" role="listitem"
+          <button class="chat-item" type="button"
             data-conversation-id="${escapeHTML(conversation.id)}"
             aria-current="${selected ? "true" : "false"}">
             <span class="avatar" aria-hidden="true">${escapeHTML(initials(conversation.name))}</span>
