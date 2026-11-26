@@ -1,1 +1,2493 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>WhatsApp Mobile UI</title>
+  <!-- Roboto Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Roboto', 'Arial', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            wa: {
+              primary: '#008069',
+              primaryHover: '#006B5B',
+              primaryActive: '#005C4B',
+              primaryLight: '#D9FDD3',
+              primarySubtle: '#E7FCEB',
+              secondary: '#25D366',
+              bgApp: '#FFFFFF',
+              bgSecondary: '#F0F2F5',
+              bgTertiary: '#F7F8FA',
+              bgChat: '#EFEAE2',
+              overlay: 'rgba(11,20,26,0.45)',
+              surfaceHover: '#F5F6F6',
+              surfaceSelected: '#E9EDEF',
+              textPrimary: '#111B21',
+              textSecondary: '#667781',
+              textTertiary: '#8696A0',
+              textLink: '#027EB5',
+              danger: '#EA0038',
+              borderDefault: '#E9EDEF',
+              borderSubtle: '#F0F2F5',
+              borderStrong: '#D1D7DB',
+              statusRead: '#53BDEB',
+              toastBg: '#233138'
+            }
+          },
+          boxShadow: {
+            'wa-sm': '0 1px 2px rgba(11,20,26,0.08)',
+            'wa-md': '0 2px 8px rgba(11,20,26,0.12)',
+            'wa-lg': '0 4px 16px rgba(11,20,26,0.16)',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Centralized Design Tokens & Base Styles */
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background-color: #EFEAE2;
+      color: #111B21;
+      margin: 0;
+      padding: 0;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(134, 150, 160, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(134, 150, 160, 0.55);
+    }
+
+    /* Subtle Chat Doodle Pattern SVG Background */
+    .chat-wallpaper {
+      background-color: #EFEAE2;
+      background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23998f82' stroke-width='1.2' stroke-opacity='0.14'%3E%3Cpath d='M20 20c5-5 15-5 20 0s5 15 0 20-15 5-20 0-5-15 0-20z'/%3E%3Cpath d='M80 25l12 8-12 8z'/%3E%3Ccircle cx='35' cy='85' r='9'/%3E%3Cpath d='M75 75h18v14H79l-4 4z'/%3E%3Cpath d='M55 45l6 6-6 6-6-6z'/%3E%3Cpath d='M15 55h10M20 50v10'/%3E%3Cpath d='M95 55c0 4-3 7-7 7s-7-3-7-7'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* Animations */
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-message {
+      animation: fadeSlideUp 200ms ease-in-out forwards;
+    }
+
+    @keyframes typingPulse {
+      0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.45;
+      }
+      30% {
+        transform: translateY(-4px);
+        opacity: 1;
+      }
+    }
+    .typing-dot:nth-child(1) { animation: typingPulse 1.2s infinite 0s; }
+    .typing-dot:nth-child(2) { animation: typingPulse 1.2s infinite 0.2s; }
+    .typing-dot:nth-child(3) { animation: typingPulse 1.2s infinite 0.4s; }
+
+    @keyframes shakeError {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shakeError 320ms ease-in-out;
+    }
+
+    @keyframes sheetSlideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .animate-sheet {
+      animation: sheetSlideUp 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes scaleFade {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-modal {
+      animation: scaleFade 180ms ease-out forwards;
+    }
+
+    /* Message Bubble Tails */
+    .bubble-in {
+      border-radius: 0 8px 8px 8px;
+      position: relative;
+    }
+    .bubble-in::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -7px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid #FFFFFF;
+      border-left: 8px solid transparent;
+    }
+
+    .bubble-out {
+      border-radius: 8px 0 8px 8px;
+      position: relative;
+    }
+    .bubble-out::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -7px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid #D9FDD3;
+      border-right: 8px solid transparent;
+    }
+
+    /* Safe Area Utility */
+    .pt-safe { padding-top: var(--safe-top); }
+    .pb-safe { padding-bottom: var(--safe-bottom); }
+  </style>
+</head>
+<body class="antialiased selection:bg-wa-primaryLight selection:text-wa-textPrimary">
+
+  <!-- Root Container -->
+  <div id="app" class="w-full h-[100dvh] flex justify-center bg-[#DFE5E7]"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col items-center gap-2 w-full max-w-[360px] px-4"></div>
+
+  <!-- Overlay / Modal / BottomSheet / AlertDialog Root -->
+  <div id="overlay-root"></div>
+
+  <script>
+    /**
+     * WhatsApp Mobile UI v1.0
+     * Single-file State-Driven Architecture matching Design Tokens & Specs
+     */
+
+    // ==========================================
+    // 1. INITIAL MOCK DATA & STATE
+    // ==========================================
+    const INITIAL_USER = {
+      id: 'me',
+      name: 'Nadia Putri',
+      phone: '+62 812-3456-7890',
+      about: 'Building calm digital experiences ✨',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+      pin: '123456' // Default demo PIN (also accepts any 6-digit PIN if user prefers, or validates against 123456 with hint)
+    };
+
+    const INITIAL_CHATS = [
+      {
+        id: 'chat-1',
+        name: 'Raka Pratama',
+        phone: '+62 811-9876-5432',
+        about: 'Product Designer • Coffee enthusiast ☕',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+        online: true,
+        lastSeen: 'online',
+        unreadCount: 2,
+        isGroup: false,
+        pinned: true,
+        muted: false,
+        disappearing: 'Off',
+        wallpaper: '#EFEAE2',
+        sharedMedia: [
+          'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80',
+          'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80'
+        ],
+        sharedLinks: [
+          { title: 'WhatsApp Design System Tokens v1.0', url: 'https://design.whatsapp.example/tokens' },
+          { title: 'Makassar Specialty Coffee Map', url: 'https://maps.example/makassar-coffee' }
+        ],
+        messages: [
+          {
+            id: 'm-101',
+            sender: 'them',
+            text: 'Hey Nadia! Did you finish reviewing the mobile-first messaging tokens?',
+            time: '09:41',
+            status: 'read',
+            date: 'Today',
+            reaction: '👍'
+          },
+          {
+            id: 'm-102',
+            sender: 'me',
+            text: 'Morning Raka! Yes, just wrapped up the PIN auth and bottom sheet transitions.',
+            time: '09:43',
+            status: 'read',
+            date: 'Today',
+            reaction: null
+          },
+          {
+            id: 'm-103',
+            sender: 'them',
+            text: 'Awesome! Check out the moodboard photo from Losari earlier.',
+            image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
+            time: '09:45',
+            status: 'delivered',
+            date: 'Today',
+            unreadMarker: true,
+            reaction: null
+          },
+          {
+            id: 'm-104',
+            sender: 'them',
+            text: 'Let’s sync at 2 PM if you’re free!',
+            time: '09:46',
+            status: 'delivered',
+            date: 'Today',
+            reaction: null
+          }
+        ]
+      },
+      {
+        id: 'chat-2',
+        name: 'Design Systems Team',
+        phone: 'Group • 8 participants',
+        about: 'Official UI/UX tokens, accessibility & component specs.',
+        avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=256&q=80',
+        online: false,
+        lastSeen: 'Alya, Dimas, Tari, +5',
+        unreadCount: 5,
+        isGroup: true,
+        pinned: false,
+        muted: false,
+        disappearing: '7 days',
+        wallpaper: '#EFEAE2',
+        sharedMedia: [
+          'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=600&q=80'
+        ],
+        sharedLinks: [
+          { title: 'WCAG AA Contrast Checklist', url: 'https://a11y.example/contrast' }
+        ],
+        messages: [
+          {
+            id: 'm-201',
+            sender: 'them',
+            senderName: 'Alya Rahma',
+            text: 'Reminder: All touch targets must be at least 44px × 44px across mobile viewports.',
+            time: '08:15',
+            status: 'read',
+            date: 'Today',
+            reaction: '❤️'
+          },
+          {
+            id: 'm-202',
+            sender: 'me',
+            text: 'Verified! Every IconButton and NumberPad key adheres strictly to 44px+.',
+            time: '08:20',
+            status: 'read',
+            date: 'Today',
+            reaction: null
+          },
+          {
+            id: 'm-203',
+            sender: 'them',
+            senderName: 'Dimas Wijaya',
+            text: 'Uploaded the updated iconography guidelines PDF.',
+            document: { name: 'UI_Iconography_Spec_v1.pdf', size: '1.4 MB', pages: '18 pages' },
+            time: '09:12',
+            status: 'delivered',
+            date: 'Today',
+            unreadMarker: true,
+            reaction: null
+          }
+        ]
+      },
+      {
+        id: 'chat-3',
+        name: 'Tari Kusuma',
+        phone: '+62 813-5555-0192',
+        about: 'Frontend Engineer | TypeScript & PWA',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80',
+        online: true,
+        lastSeen: 'online',
+        unreadCount: 0,
+        isGroup: false,
+        pinned: false,
+        muted: false,
+        disappearing: 'Off',
+        wallpaper: '#EFEAE2',
+        sharedMedia: [],
+        sharedLinks: [],
+        messages: [
+          {
+            id: 'm-301',
+            sender: 'me',
+            text: 'Are we deploying the PWA build tonight?',
+            time: 'Yesterday',
+            status: 'read',
+            date: 'Yesterday',
+            reaction: null
+          },
+          {
+            id: 'm-302',
+            sender: 'them',
+            text: 'Yes! Lighthouse score is at 100 for Performance & Accessibility.',
+            time: 'Yesterday',
+            status: 'read',
+            date: 'Yesterday',
+            reaction: '🔥'
+          }
+        ]
+      },
+      {
+        id: 'chat-4',
+        name: 'Budi Santoso',
+        phone: '+62 852-4411-2299',
+        about: 'Available',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80',
+        online: false,
+        lastSeen: 'last seen today at 07:50',
+        unreadCount: 0,
+        isGroup: false,
+        pinned: false,
+        muted: true,
+        disappearing: 'Off',
+        wallpaper: '#EFEAE2',
+        sharedMedia: [],
+        sharedLinks: [],
+        messages: [
+          {
+            id: 'm-401',
+            sender: 'them',
+            text: 'Thanks for sending over the invoice yesterday!',
+            time: 'Yesterday',
+            status: 'read',
+            date: 'Yesterday',
+            reaction: null
+          }
+        ]
+      },
+      {
+        id: 'chat-5',
+        name: 'Siti Aminah',
+        phone: '+62 878-9001-3344',
+        about: 'At the gym 🏋️‍♀️',
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=256&q=80',
+        online: false,
+        lastSeen: 'last seen yesterday at 21:14',
+        unreadCount: 1,
+        isGroup: false,
+        pinned: false,
+        muted: false,
+        disappearing: 'Off',
+        wallpaper: '#EFEAE2',
+        sharedMedia: [],
+        sharedLinks: [],
+        messages: [
+          {
+            id: 'm-501',
+            sender: 'them',
+            text: 'Can you share the notes from Tuesday’s sprint review?',
+            time: 'Tuesday',
+            status: 'delivered',
+            date: 'Tuesday',
+            unreadMarker: true,
+            reaction: null
+          }
+        ]
+      }
+    ];
+
+    const STATUS_UPDATES = [
+      {
+        id: 'st-1',
+        userName: 'Raka Pratama',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
+        time: '25 minutes ago',
+        slides: [
+          {
+            image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80',
+            caption: 'Morning espresso before design critique ☕'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+            caption: 'Polishing component tokens!'
+          }
+        ]
+      },
+      {
+        id: 'st-2',
+        userName: 'Tari Kusuma',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80',
+        time: '2 hours ago',
+        slides: [
+          {
+            image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=900&q=80',
+            caption: 'Late night coding session 🚀'
+          }
+        ]
+      }
+    ];
+
+    // Global App State
+    const state = {
+      isAuthenticated: false,
+      pinInput: '',
+      pinLoading: false,
+      pinError: '',
+      user: { ...INITIAL_USER },
+      chats: JSON.parse(JSON.stringify(INITIAL_CHATS)),
+      activeChatId: null, // On desktop, defaults to first chat once logged in; on mobile, null shows ChatsPage
+      activeFilter: 'All', // 'All' | 'Unread' | 'Groups'
+      searchQuery: '',
+      headerSearchOpen: false,
+      chatSearchOpen: false,
+      chatSearchQuery: '',
+      composerText: '',
+      replyingTo: null,
+      typingChatId: null,
+      isRecordingVoice: false,
+      recordingSeconds: 0,
+      standalonePage: null, // null | 'profile' | 'contact-details' | 'chat-details' | 'settings' | 'media-viewer' | 'status-viewer'
+      mediaViewerData: null,
+      statusViewerData: { statusIndex: 0, slideIndex: 0 },
+      overlay: null // { type: 'dropdown' | 'bottom-sheet' | 'alert' | 'emoji' | 'new-chat' | 'pin-reset', data: any }
+    };
+
+    let recordingTimer = null;
+    let statusTimer = null;
+
+    // ==========================================
+    // 2. HELPER UTILITIES
+    // ==========================================
+    function isDesktopOrTablet() {
+      return window.innerWidth >= 768;
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'bg-wa-toastBg text-white text-[13px] font-medium px-4 py-3 rounded-[8px] shadow-wa-lg animate-message text-center';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 200ms ease';
+        setTimeout(() => toast.remove(), 220);
+      }, 2800);
+    }
+
+    function getActiveChat() {
+      return state.chats.find(c => c.id === state.activeChatId) || null;
+    }
+
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderStatusIcon(status) {
+      if (status === 'pending') {
+        return `<i data-lucide="clock" class="w-3.5 h-3.5 text-wa-textTertiary inline-block"></i>`;
+      }
+      if (status === 'sent') {
+        return `<i data-lucide="check" class="w-3.5 h-3.5 text-wa-textTertiary inline-block"></i>`;
+      }
+      if (status === 'delivered') {
+        return `<i data-lucide="check-check" class="w-3.5 h-3.5 text-wa-textTertiary inline-block"></i>`;
+      }
+      if (status === 'read') {
+        return `<i data-lucide="check-check" class="w-3.5 h-3.5 text-wa-statusRead inline-block"></i>`;
+      }
+      return `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-wa-danger inline-block"></i>`;
+    }
+
+    // ==========================================
+    // 3. AUTHENTICATION LOGIC (6-DIGIT PIN)
+    // ==========================================
+    function handlePinDigit(digit) {
+      if (state.pinLoading || state.pinInput.length >= 6) return;
+      state.pinError = '';
+      state.pinInput += digit;
+      render();
+
+      if (state.pinInput.length === 6) {
+        submitPin();
+      }
+    }
+
+    function handlePinDelete() {
+      if (state.pinLoading || state.pinInput.length === 0) return;
+      state.pinError = '';
+      state.pinInput = state.pinInput.slice(0, -1);
+      render();
+    }
+
+    function submitPin() {
+      state.pinLoading = true;
+      render();
+
+      setTimeout(() => {
+        // Accept user PIN (default 123456) or show inline error if '000000' entered so user can test error state
+        if (state.pinInput === '000000') {
+          state.pinLoading = false;
+          state.pinError = 'Incorrect PIN. Hint: Try 123456';
+          state.pinInput = '';
+          render();
+          const indicator = document.getElementById('pin-indicator');
+          if (indicator) indicator.classList.add('animate-shake');
+          return;
+        }
+
+        state.pinLoading = false;
+        state.isAuthenticated = true;
+        if (isDesktopOrTablet() && !state.activeChatId) {
+          state.activeChatId = state.chats[0]?.id || null;
+          markChatAsRead(state.activeChatId);
+        }
+        render();
+        showToast('Welcome back, ' + state.user.name);
+      }, 450);
+    }
+
+    function lockApp() {
+      state.isAuthenticated = false;
+      state.pinInput = '';
+      state.pinError = '';
+      state.overlay = null;
+      state.standalonePage = null;
+      render();
+    }
+
+    // ==========================================
+    // 4. MESSAGING & CHAT ACTIONS
+    // ==========================================
+    function selectChat(chatId) {
+      state.activeChatId = chatId;
+      state.standalonePage = null;
+      state.chatSearchOpen = false;
+      state.chatSearchQuery = '';
+      state.replyingTo = null;
+      markChatAsRead(chatId);
+      render();
+      scrollToBottom();
+    }
+
+    function markChatAsRead(chatId) {
+      const chat = state.chats.find(c => c.id === chatId);
+      if (chat) {
+        chat.unreadCount = 0;
+        chat.messages.forEach(m => {
+          if (m.sender === 'them') m.status = 'read';
+        });
+      }
+    }
+
+    function sendMessage(customPayload = {}) {
+      const chat = getActiveChat();
+      if (!chat) return;
+
+      const text = customPayload.text !== undefined ? customPayload.text : state.composerText.trim();
+      if (!text && !customPayload.image && !customPayload.document && !customPayload.voiceNote) return;
+
+      // Clear previous unread markers
+      chat.messages.forEach(m => delete m.unreadMarker);
+
+      const newMsg = {
+        id: 'm-' + Date.now(),
+        sender: 'me',
+        text: text,
+        image: customPayload.image || null,
+        document: customPayload.document || null,
+        voiceNote: customPayload.voiceNote || null,
+        replyTo: state.replyingTo ? { ...state.replyingTo } : null,
+        time: getCurrentTime(),
+        status: 'sent',
+        date: 'Today',
+        reaction: null
+      };
+
+      chat.messages.push(newMsg);
+      if (!customPayload.text) {
+        state.composerText = '';
+      }
+      state.replyingTo = null;
+      state.overlay = null;
+
+      // Move chat to top of list
+      state.chats = [chat, ...state.chats.filter(c => c.id !== chat.id)];
+
+      render();
+      scrollToBottom();
+
+      // Simulate delivery & read receipts + intelligent auto-reply
+      setTimeout(() => {
+        newMsg.status = 'delivered';
+        if (state.activeChatId === chat.id) render();
+      }, 600);
+
+      setTimeout(() => {
+        newMsg.status = 'read';
+        if (state.activeChatId === chat.id) render();
+      }, 1300);
+
+      // Simulate typing indicator & reply
+      setTimeout(() => {
+        state.typingChatId = chat.id;
+        if (state.activeChatId === chat.id) {
+          render();
+          scrollToBottom();
+        }
+
+        setTimeout(() => {
+          state.typingChatId = null;
+          const replies = [
+            "Got it! Thanks for the quick update 👍",
+            "Sounds like a great plan. Let's do that!",
+            "Looks super clean and responsive ✨",
+            "Noted! I'll follow up shortly."
+          ];
+          const randomReply = replies[Math.floor(Math.random() * replies.length)];
+          const replyMsg = {
+            id: 'm-' + (Date.now() + 1),
+            sender: 'them',
+            senderName: chat.isGroup ? 'Alya Rahma' : undefined,
+            text: randomReply,
+            time: getCurrentTime(),
+            status: state.activeChatId === chat.id ? 'read' : 'delivered',
+            date: 'Today',
+            reaction: null
+          };
+          chat.messages.push(replyMsg);
+          if (state.activeChatId !== chat.id) {
+            chat.unreadCount += 1;
+          }
+          render();
+          scrollToBottom();
+        }, 1600);
+      }, 1500);
+    }
+
+    function toggleReaction(msgId, emoji) {
+      const chat = getActiveChat();
+      if (!chat) return;
+      const msg = chat.messages.find(m => m.id === msgId);
+      if (msg) {
+        msg.reaction = msg.reaction === emoji ? null : emoji;
+      }
+      state.overlay = null;
+      render();
+    }
+
+    function deleteMessage(msgId) {
+      const chat = getActiveChat();
+      if (!chat) return;
+      chat.messages = chat.messages.filter(m => m.id !== msgId);
+      state.overlay = null;
+      render();
+      showToast('Message deleted');
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        const area = document.getElementById('message-area');
+        if (area) {
+          area.scrollTop = area.scrollHeight;
+        }
+      });
+    }
+
+    // Voice Recording Simulation
+    function toggleVoiceRecording() {
+      if (state.isRecordingVoice) {
+        clearInterval(recordingTimer);
+        const duration = state.recordingSeconds || 1;
+        state.isRecordingVoice = false;
+        state.recordingSeconds = 0;
+        const mins = Math.floor(duration / 60);
+        const secs = String(duration % 60).padStart(2, '0');
+        sendMessage({ voiceNote: `${mins}:${secs}` });
+      } else {
+        state.isRecordingVoice = true;
+        state.recordingSeconds = 0;
+        render();
+        recordingTimer = setInterval(() => {
+          state.recordingSeconds += 1;
+          const timerEl = document.getElementById('voice-timer');
+          if (timerEl) {
+            const mins = Math.floor(state.recordingSeconds / 60);
+            const secs = String(state.recordingSeconds % 60).padStart(2, '0');
+            timerEl.textContent = `${mins}:${secs}`;
+          }
+        }, 1000);
+      }
+    }
+
+    function cancelVoiceRecording() {
+      clearInterval(recordingTimer);
+      state.isRecordingVoice = false;
+      state.recordingSeconds = 0;
+      render();
+      showToast('Voice message discarded');
+    }
+
+    // ==========================================
+    // 5. COMPONENT RENDERERS
+    // ==========================================
+
+    // --- 5.1 AuthScreen ---
+    function renderAuthScreen() {
+      const dots = Array.from({ length: 6 }, (_, i) => {
+        const filled = i < state.pinInput.length;
+        return `<span class="w-[14px] h-[14px] rounded-full transition-all duration-150 ${
+          filled ? 'bg-wa-primary scale-110' : 'bg-wa-borderStrong'
+        }"></span>`;
+      }).join('');
+
+      const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
+
+      return `
+        <div class="w-full max-w-[480px] md:max-w-[440px] md:my-auto md:h-auto md:min-h-[680px] md:rounded-[20px] md:shadow-wa-lg bg-white min-h-[100dvh] flex flex-col items-center justify-between p-6 pt-safe pb-safe">
+          <!-- AuthHeader -->
+          <div class="flex flex-col items-center mt-4">
+            <div class="w-[64px] h-[64px] rounded-full bg-wa-primary flex items-center justify-center shadow-wa-sm mb-3">
+              <svg class="w-9 h-9 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+              </svg>
+            </div>
+            <h1 class="text-[24px] font-bold text-wa-primary tracking-tight">WhatsApp</h1>
+          </div>
+
+          <!-- AuthContent -->
+          <div class="w-full max-w-[360px] flex flex-col items-center">
+            <div class="text-center mb-2">
+              <h2 class="text-[24px] font-semibold text-wa-textPrimary leading-[1.2]">Welcome Back</h2>
+              <p class="text-[14px] text-wa-textSecondary mt-1">Enter your 6-digit PIN to unlock your messages</p>
+            </div>
+
+            <!-- PINAuthentication -->
+            <div class="flex flex-col items-center w-full mt-4">
+              <span class="text-[20px] font-semibold text-wa-textPrimary">Enter PIN</span>
+              <span class="text-[14px] text-wa-textSecondary mt-0.5">Use any 6 digits (e.g. 123456)</span>
+
+              <!-- PINIndicator -->
+              <div id="pin-indicator" class="flex items-center justify-center gap-[14px] my-[28px]">
+                ${dots}
+              </div>
+
+              <!-- Loading or Error Feedback -->
+              <div class="h-6 flex items-center justify-center mb-2">
+                ${
+                  state.pinLoading
+                    ? `<div class="flex items-center gap-2 text-wa-primary text-[13px] font-medium">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Verifying PIN...
+                       </div>`
+                    : state.pinError
+                    ? `<p class="text-wa-danger text-[13px] font-medium">${escapeHTML(state.pinError)}</p>`
+                    : ''
+                }
+              </div>
+
+              <!-- NumberPad -->
+              <div class="grid grid-cols-3 gap-[16px] w-[280px] place-items-center">
+                ${keys
+                  .map(k => {
+                    if (k === '') return `<div class="w-[76px] h-[64px]"></div>`;
+                    if (k === 'del') {
+                      return `
+                        <button
+                          type="button"
+                          aria-label="Delete digit"
+                          onclick="handlePinDelete()"
+                          class="w-[76px] h-[64px] rounded-full bg-transparent hover:bg-wa-bgSecondary active:bg-wa-primaryLight active:scale-95 transition-all flex items-center justify-center text-wa-textPrimary focus:outline-none focus:ring-2 focus:ring-wa-primary"
+                        >
+                          <i data-lucide="delete" class="w-6 h-6"></i>
+                        </button>
+                      `;
+                    }
+                    return `
+                      <button
+                        type="button"
+                        onclick="handlePinDigit('${k}')"
+                        class="w-[76px] h-[64px] rounded-full bg-wa-bgSecondary hover:bg-wa-surfaceSelected active:bg-wa-primaryLight active:scale-95 transition-all text-[24px] font-medium text-wa-textPrimary flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-wa-primary"
+                      >
+                        ${k}
+                      </button>
+                    `;
+                  })
+                  .join('')}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onclick="openAlertDialog('Reset Two-Step Verification PIN?', 'For demo security, any 6-digit PIN other than 000000 unlocks the app immediately.', 'Got it')"
+              class="mt-6 text-[14px] font-medium text-wa-primary hover:underline bg-transparent py-2 px-4 rounded-lg min-h-[44px]"
+            >
+              Forgot PIN?
+            </button>
+          </div>
+
+          <!-- AuthFooter -->
+          <div class="text-center text-[12px] text-wa-textTertiary flex items-center gap-1.5 mt-4">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>End-to-end encrypted</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 5.2 ChatsPage (Sidebar / Mobile Home) ---
+    function renderChatsPage() {
+      const filteredChats = state.chats.filter(chat => {
+        const matchesSearch =
+          chat.name.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+          chat.messages.some(m => (m.text || '').toLowerCase().includes(state.searchQuery.toLowerCase()));
+        if (!matchesSearch) return false;
+        if (state.activeFilter === 'Unread') return chat.unreadCount > 0;
+        if (state.activeFilter === 'Groups') return chat.isGroup;
+        return true;
+      });
+
+      const filters = ['All', 'Unread', 'Groups'];
+
+      return `
+        <div class="flex flex-col h-full bg-white relative">
+          <!-- AppShell Header -->
+          <header class="h-[60px] bg-white px-4 flex items-center justify-between border-b border-wa-borderDefault shrink-0">
+            <div class="flex items-center gap-2.5">
+              <div class="w-[32px] h-[32px] rounded-full bg-wa-primary flex items-center justify-center text-white">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+                </svg>
+              </div>
+              <span class="text-[20px] font-semibold text-wa-primary">WhatsApp</span>
+            </div>
+
+            <!-- ActionSection -->
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Status Updates"
+                onclick="openStatusViewer(0)"
+                class="w-[44px] h-[44px] rounded-full hover:bg-wa-bgSecondary flex items-center justify-center text-wa-textPrimary transition-colors relative"
+                title="View Status Updates"
+              >
+                <i data-lucide="circle-dashed" class="w-[22px] h-[22px] text-wa-primary"></i>
+                <span class="w-2 h-2 rounded-full bg-wa-secondary absolute top-2.5 right-2.5"></span>
+              </button>
+              <button
+                type="button"
+                aria-label="Camera"
+                onclick="showToast('Camera ready for quick snap')"
+                class="w-[44px] h-[44px] rounded-full hover:bg-wa-bgSecondary flex items-center justify-center text-wa-textPrimary transition-colors"
+              >
+                <i data-lucide="camera" class="w-[22px] h-[22px]"></i>
+              </button>
+              <button
+                type="button"
+                aria-label="More options"
+                onclick="toggleOverlay('main-menu')"
+                class="w-[44px] h-[44px] rounded-full hover:bg-wa-bgSecondary flex items-center justify-center text-wa-textPrimary transition-colors"
+              >
+                <i data-lucide="more-vertical" class="w-[22px] h-[22px]"></i>
+              </button>
+            </div>
+          </header>
+
+          <!-- ChatsHeader (Mobile prominent title) -->
+          <div class="px-4 pt-4 pb-1 flex items-center justify-between md:hidden">
+            <h1 class="text-[26px] font-bold text-wa-textPrimary leading-tight">Chats</h1>
+            <button
+              type="button"
+              onclick="openStatusViewer(0)"
+              class="flex items-center gap-1.5 text-[12px] font-medium text-wa-primary bg-wa-primarySubtle px-3 py-1.5 rounded-full"
+            >
+              <span class="w-2 h-2 rounded-full bg-wa-secondary animate-pulse"></span>
+              2 Status Updates
+            </button>
+          </div>
+
+          <!-- SearchSection -->
+          <div class="px-3 py-2 shrink-0">
+            <div class="h-[40px] bg-wa-bgSecondary rounded-[8px] px-3.5 flex items-center gap-2.5 focus-within:ring-1 focus-within:ring-wa-primary">
+              <i data-lucide="search" class="w-[18px] h-[18px] text-wa-textSecondary shrink-0"></i>
+              <input
+                type="text"
+                value="${escapeHTML(state.searchQuery)}"
+                oninput="state.searchQuery = this.value; render();"
+                placeholder="Search or start a new chat"
+                class="w-full bg-transparent text-[14px] text-wa-textPrimary placeholder-wa-textSecondary focus:outline-none"
+              />
+              ${
+                state.searchQuery
+                  ? `<button type="button" onclick="state.searchQuery=''; render();" class="text-wa-textSecondary hover:text-wa-textPrimary">
+                      <i data-lucide="x" class="w-4 h-4"></i>
+                     </button>`
+                  : ''
+              }
+            </div>
+          </div>
+
+          <!-- FilterSection -->
+          <div class="flex flex-row gap-2 px-4 py-2 shrink-0 overflow-x-auto">
+            ${filters
+              .map(filter => {
+                const active = state.activeFilter === filter;
+                return `
+                  <button
+                    type="button"
+                    onclick="state.activeFilter = '${filter}'; render();"
+                    class="h-[34px] px-[14px] rounded-full text-[13px] font-medium transition-colors shrink-0 ${
+                      active
+                        ? 'bg-wa-primaryLight text-wa-primary'
+                        : 'bg-wa-bgSecondary text-wa-textSecondary hover:bg-wa-surfaceSelected'
+                    }"
+                  >
+                    ${filter}
+                  </button>
+                `;
+              })
+              .join('')}
+          </div>
+
+          <!-- ConversationList -->
+          <div class="flex-1 overflow-y-auto pb-20 md:pb-4">
+            ${
+              filteredChats.length === 0
+                ? `
+                  <div class="flex flex-col items-center justify-center text-center p-8 mt-8">
+                    <div class="w-16 h-16 rounded-full bg-wa-bgSecondary flex items-center justify-center text-wa-textTertiary mb-3">
+                      <i data-lucide="message-square-off" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-[18px] font-semibold text-wa-textPrimary">No chats found</h3>
+                    <p class="text-[14px] text-wa-textSecondary mt-1">Try adjusting your search or filter criteria.</p>
+                    <button
+                      type="button"
+                      onclick="state.searchQuery=''; state.activeFilter='All'; render();"
+                      class="mt-4 text-[14px] font-semibold text-wa-primary"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                `
+                : filteredChats
+                    .map(chat => {
+                      const lastMsg = chat.messages[chat.messages.length - 1];
+                      const isSelected = state.activeChatId === chat.id && isDesktopOrTablet();
+                      const isTyping = state.typingChatId === chat.id;
+
+                      let previewHtml = '';
+                      if (isTyping) {
+                        previewHtml = `<span class="text-wa-primary font-medium">typing...</span>`;
+                      } else if (lastMsg) {
+                        const statusIcon = lastMsg.sender === 'me' ? renderStatusIcon(lastMsg.status) + ' ' : '';
+                        const content = lastMsg.image
+                          ? '📷 Photo'
+                          : lastMsg.document
+                          ? '📄 ' + escapeHTML(lastMsg.document.name)
+                          : lastMsg.voiceNote
+                          ? '🎤 Voice message (' + lastMsg.voiceNote + ')'
+                          : escapeHTML(lastMsg.text);
+                        previewHtml = `${statusIcon}<span>${content}</span>`;
+                      }
+
+                      return `
+                        <div
+                          role="button"
+                          tabindex="0"
+                          onclick="selectChat('${chat.id}')"
+                          onkeydown="if(event.key==='Enter') selectChat('${chat.id}')"
+                          class="h-[76px] px-4 py-[10px] flex items-center gap-3 cursor-pointer transition-colors relative ${
+                            isSelected ? 'bg-wa-surfaceSelected' : 'hover:bg-wa-surfaceHover bg-white'
+                          }"
+                        >
+                          <!-- Avatar -->
+                          <div class="relative shrink-0">
+                            <img
+                              src="${chat.avatar}"
+                              alt="${escapeHTML(chat.name)}"
+                              onerror="this.src='https://placehold.co/104x104/DFE5E7/667781?text=${encodeURIComponent(chat.name[0])}'"
+                              class="w-[52px] h-[52px] rounded-full object-cover bg-[#DFE5E7]"
+                            />
+                            ${
+                              chat.online
+                                ? `<span class="w-3.5 h-3.5 rounded-full bg-wa-secondary border-2 border-white absolute bottom-0 right-0"></span>`
+                                : ''
+                            }
+                          </div>
+
+                          <!-- Content -->
+                          <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-[16px] font-medium text-wa-textPrimary truncate">${escapeHTML(chat.name)}</span>
+                              <span class="text-[11px] shrink-0 ${
+                                chat.unreadCount > 0 ? 'text-wa-secondary font-semibold' : 'text-wa-textSecondary'
+                              }">
+                                ${lastMsg ? lastMsg.time : ''}
+                              </span>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 mt-0.5">
+                              <p class="text-[13px] text-wa-textSecondary truncate flex items-center gap-1">
+                                ${previewHtml}
+                              </p>
+                              <div class="flex items-center gap-1.5 shrink-0">
+                                ${chat.muted ? `<i data-lucide="volume-x" class="w-3.5 h-3.5 text-wa-textTertiary"></i>` : ''}
+                                ${chat.pinned ? `<i data-lucide="pin" class="w-3.5 h-3.5 text-wa-textTertiary rotate-45"></i>` : ''}
+                                ${
+                                  chat.unreadCount > 0
+                                    ? `<span class="min-w-[20px] h-[20px] px-1.5 rounded-full bg-wa-secondary text-white text-[11px] font-semibold flex items-center justify-center">
+                                        ${chat.unreadCount}
+                                       </span>`
+                                    : ''
+                                }
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Bottom Divider (margin_left: 80px) -->
+                          <div class="absolute bottom-0 right-0 left-[80px] h-[1px] bg-wa-borderSubtle"></div>
+                        </div>
+                      `;
+                    })
+                    .join('')
+            }
+          </div>
+
+          <!-- NewChatFAB -->
+          <button
+            type="button"
+            aria-label="Start new chat"
+            onclick="toggleOverlay('new-chat')"
+            class="fixed md:absolute right-[20px] bottom-[88px] md:bottom-[24px] w-[56px] h-[56px] rounded-[16px] bg-wa-primary hover:bg-wa-primaryHover active:bg-wa-primaryActive text-white flex items-center justify-center shadow-[0_3px_8px_rgba(0,0,0,0.2)] transition-transform active:scale-95 z-20"
+          >
+            <i data-lucide="message-circle-plus" class="w-6 h-6"></i>
+          </button>
+
+          <!-- Mobile BottomNav -->
+          <nav class="md:hidden h-[64px] bg-wa-bgTertiary border-t border-wa-borderDefault flex items-center justify-around shrink-0 pb-safe z-10">
+            <button
+              type="button"
+              onclick="state.standalonePage = null; render();"
+              class="flex flex-col items-center justify-center h-[56px] px-5 text-wa-primary"
+            >
+              <div class="px-4 py-1 rounded-full bg-wa-primaryLight mb-0.5">
+                <i data-lucide="message-circle" class="w-[22px] h-[22px] fill-wa-primary/20"></i>
+              </div>
+              <span class="text-[12px] font-semibold">Chats</span>
+            </button>
+
+            <button
+              type="button"
+              onclick="openStatusViewer(0)"
+              class="flex flex-col items-center justify-center h-[56px] px-5 text-wa-textSecondary hover:text-wa-textPrimary"
+            >
+              <div class="px-4 py-1 rounded-full mb-0.5 relative">
+                <i data-lucide="circle-dashed" class="w-[22px] h-[22px]"></i>
+                <span class="w-2 h-2 rounded-full bg-wa-secondary absolute top-1 right-3"></span>
+              </div>
+              <span class="text-[12px] font-medium">Updates</span>
+            </button>
+
+            <button
+              type="button"
+              onclick="state.standalonePage = 'settings'; render();"
+              class="flex flex-col items-center justify-center h-[56px] px-5 text-wa-textSecondary hover:text-wa-textPrimary"
+            >
+              <div class="px-4 py-1 rounded-full mb-0.5">
+                <i data-lucide="settings" class="w-[22px] h-[22px]"></i>
+              </div>
+              <span class="text-[12px] font-medium">Settings</span>
+            </button>
+          </nav>
+        </div>
+      `;
+    }
+
+    // --- 5.3 ChatPage (Conversation View) ---
+    function renderChatPage() {
+      const chat = getActiveChat();
+
+      if (!chat) {
+        return `
+          <div class="hidden md:flex flex-col items-center justify-center h-full bg-wa-bgTertiary border-b-[6px] border-wa-primary text-center p-8">
+            <div class="w-24 h-24 rounded-full bg-wa-primarySubtle flex items-center justify-center text-wa-primary mb-5">
+              <i data-lucide="messages-square" class="w-12 h-12"></i>
+            </div>
+            <h2 class="text-[28px] font-normal text-wa-textPrimary">WhatsApp Web & Mobile</h2>
+            <p class="text-[14px] text-wa-textSecondary max-w-[420px] mt-2 leading-relaxed">
+              Send and receive messages seamlessly. Select a conversation from the sidebar to start messaging.
+            </p>
+            <div class="mt-8 flex items-center gap-1.5 text-[12px] text-wa-textTertiary">
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+              <span>End-to-end encrypted</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const visibleMessages = state.chatSearchQuery
+        ? chat.messages.filter(m => (m.text || '').toLowerCase().includes(state.chatSearchQuery.toLowerCase()))
+        : chat.messages;
+
+      let lastRenderedDate = null;
+
+      return `
+        <div class="flex flex-col h-full bg-wa-bgChat relative">
+          <!-- ChatHeader -->
+          <header class="h-[60px] bg-wa-bgSecondary px-3 flex items-center gap-2 border-b border-wa-borderDefault shrink-0 z-10">
+            <!-- BackButton (Mobile) -->
+            <button
+              type="button"
+              aria-label="Back to chats"
+              onclick="state.activeChatId = null; render();"
+              class="md:hidden w-[44px] h-[44px] -ml-1 rounded-full hover:bg-black/5 flex items-center justify-center text-wa-textPrimary shrink-0"
+            >
+              <i data-lucide="arrow-left" class="w-[22px] h-[22px]"></i>
+            </button>
+
+            <!-- Contact Info Trigger -->
+            <div
+              role="button"
+              tabindex="0"
+              onclick="state.standalonePage = 'contact-details'; render();"
+              class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer py-1 rounded-lg hover:bg-black/[0.03] px-1"
+            >
+              <img
+                src="${chat.avatar}"
+                alt="${escapeHTML(chat.name)}"
+                onerror="this.src='https://placehold.co/80x80/DFE5E7/667781?text=${encodeURIComponent(chat.name[0])}'"
+                class="w-[40px] h-[40px] rounded-full object-cover shrink-0 bg-[#DFE5E7]"
+              />
+              <div class="min-w-0 flex-1">
+                <h2 class="text-[16px] font-semibold text-wa-textPrimary truncate leading-tight">${escapeHTML(chat.name)}</h2>
+                <p class="text-[12px] truncate ${
+                  state.typingChatId === chat.id ? 'text-wa-primary font-medium' : 'text-wa-textSecondary'
+                }">
+                  ${state.typingChatId === chat.id ? 'typing...' : escapeHTML(chat.lastSeen)}
+                </p>
+              </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center gap-0.5 shrink-0">
+              <button
+                type="button"
+                aria-label="Video call"
+                onclick="showToast('Starting encrypted video call with ${escapeHTML(chat.name)}...')"
+                class="w-[44px] h-[44px] rounded-full hover:bg-black/5 flex items-center justify-center text-wa-textPrimary"
+              >
+                <i data-lucide="video" class="w-[21px] h-[21px]"></i>
+              </button>
+              <button
+                type="button"
+                aria-label="Voice call"
+                onclick="showToast('Calling ${escapeHTML(chat.name)}...')"
+                class="w-[44px] h-[44px] rounded-full hover:bg-black/5 flex items-center justify-center text-wa-textPrimary"
+              >
+                <i data-lucide="phone" class="w-[20px] h-[20px]"></i>
+              </button>
+              <button
+                type="button"
+                aria-label="Chat menu"
+                onclick="toggleOverlay('chat-menu')"
+                class="w-[44px] h-[44px] rounded-full hover:bg-black/5 flex items-center justify-center text-wa-textPrimary"
+              >
+                <i data-lucide="more-vertical" class="w-[21px] h-[21px]"></i>
+              </button>
+            </div>
+          </header>
+
+          <!-- In-Chat Search Bar (Conditional) -->
+          ${
+            state.chatSearchOpen
+              ? `
+                <div class="bg-white px-3 py-2 border-b border-wa-borderDefault flex items-center gap-2 shrink-0 animate-message">
+                  <div class="flex-1 h-[38px] bg-wa-bgSecondary rounded-[8px] px-3 flex items-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4 text-wa-textSecondary"></i>
+                    <input
+                      type="text"
+                      autofocus
+                      value="${escapeHTML(state.chatSearchQuery)}"
+                      oninput="state.chatSearchQuery = this.value; render();"
+                      placeholder="Search messages in this chat..."
+                      class="w-full bg-transparent text-[14px] focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onclick="state.chatSearchOpen = false; state.chatSearchQuery = ''; render();"
+                    class="px-3 h-[38px] text-[13px] font-semibold text-wa-primary"
+                  >
+                    Done
+                  </button>
+                </div>
+              `
+              : ''
+          }
+
+          <!-- MessageArea -->
+          <div
+            id="message-area"
+            style="background-color: ${chat.wallpaper || '#EFEAE2'}"
+            class="flex-1 overflow-y-auto px-3 py-3 chat-wallpaper flex flex-col gap-1.5"
+          >
+            <!-- Encryption Notice Pill -->
+            <div class="self-center max-w-[340px] bg-[#FFF5C4]/95 text-[#54656F] text-[11.5px] text-center px-3 py-2 rounded-[8px] shadow-wa-sm my-1 flex items-start gap-1.5">
+              <i data-lucide="lock" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i>
+              <span>Messages and calls are end-to-end encrypted. No one outside of this chat can read or listen to them.</span>
+            </div>
+
+            <!-- MessageList -->
+            ${visibleMessages
+              .map(msg => {
+                let dateBadge = '';
+                if (msg.date && msg.date !== lastRenderedDate) {
+                  lastRenderedDate = msg.date;
+                  dateBadge = `
+                    <div class="self-center my-2">
+                      <span class="bg-white text-wa-textSecondary text-[12px] font-medium px-3 py-1.5 rounded-[8px] shadow-wa-sm">
+                        ${escapeHTML(msg.date)}
+                      </span>
+                    </div>
+                  `;
+                }
+
+                const unreadBanner = msg.unreadMarker
+                  ? `
+                    <div class="w-full py-1.5 my-1.5 bg-white/75 backdrop-blur-xs rounded-[8px] flex justify-center">
+                      <span class="bg-wa-primaryLight text-[#54656F] text-[12px] font-medium px-3 py-1 rounded-full">
+                        Unread messages
+                      </span>
+                    </div>
+                  `
+                  : '';
+
+                const isMe = msg.sender === 'me';
+
+                return `
+                  ${dateBadge}
+                  ${unreadBanner}
+                  <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-message group mb-1">
+                    <div
+                      onclick="openMessageActions('${msg.id}')"
+                      class="max-w-[85%] md:max-w-[68%] px-[9px] pt-[7px] pb-[6px] shadow-wa-sm cursor-pointer transition-transform active:scale-[0.99] ${
+                        isMe ? 'bg-wa-primaryLight bubble-out' : 'bg-white bubble-in'
+                      }"
+                    >
+                      ${
+                        !isMe && msg.senderName
+                          ? `<div class="text-[12px] font-semibold text-wa-primary mb-0.5">${escapeHTML(msg.senderName)}</div>`
+                          : ''
+                      }
+
+                      ${
+                        msg.replyTo
+                          ? `
+                            <div class="bg-black/[0.05] border-l-4 border-wa-primary p-2 rounded-[4px] mb-1.5 text-[12px]">
+                              <div class="font-semibold text-wa-primary">${msg.replyTo.sender === 'me' ? 'You' : escapeHTML(chat.name)}</div>
+                              <div class="text-wa-textSecondary truncate">${escapeHTML(msg.replyTo.text || 'Attachment')}</div>
+                            </div>
+                          `
+                          : ''
+                      }
+
+                      ${
+                        msg.image
+                          ? `
+                            <div
+                              onclick="event.stopPropagation(); openMediaViewer('${msg.image}', '${escapeHTML(msg.text || 'Photo')}')"
+                              class="mb-1.5 rounded-[6px] overflow-hidden max-w-[260px]"
+                            >
+                              <img src="${msg.image}" alt="Attachment" class="w-full h-auto max-h-[240px] object-cover" />
+                            </div>
+                          `
+                          : ''
+                      }
+
+                      ${
+                        msg.document
+                          ? `
+                            <div class="flex items-center gap-3 bg-black/[0.04] p-2.5 rounded-[6px] mb-1 max-w-[260px]">
+                              <div class="w-[40px] h-[40px] rounded-[8px] bg-wa-danger/10 text-wa-danger flex items-center justify-center shrink-0">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
+                              </div>
+                              <div class="min-w-0 flex-1">
+                                <p class="text-[13px] font-medium text-wa-textPrimary truncate">${escapeHTML(msg.document.name)}</p>
+                                <p class="text-[11px] text-wa-textSecondary">${escapeHTML(msg.document.size)} • ${escapeHTML(msg.document.pages)}</p>
+                              </div>
+                            </div>
+                          `
+                          : ''
+                      }
+
+                      ${
+                        msg.voiceNote
+                          ? `
+                            <div class="flex items-center gap-2.5 py-1 pr-2 min-w-[190px]">
+                              <button type="button" onclick="event.stopPropagation(); showToast('Playing voice note (${msg.voiceNote})')" class="w-8 h-8 rounded-full bg-wa-primary text-white flex items-center justify-center shrink-0">
+                                <i data-lucide="play" class="w-4 h-4 fill-white ml-0.5"></i>
+                              </button>
+                              <div class="flex-1 flex items-center gap-0.5 h-4">
+                                ${[40, 75, 55, 90, 65, 35, 80, 95, 50, 70, 45, 85, 60, 40].map(h => `<span class="flex-1 bg-wa-primary/60 rounded-full" style="height:${h}%"></span>`).join('')}
+                              </div>
+                              <span class="text-[11px] text-wa-textSecondary">${msg.voiceNote}</span>
+                            </div>
+                          `
+                          : ''
+                      }
+
+                      <div class="flex flex-wrap items-end justify-end gap-2">
+                        ${
+                          msg.text
+                            ? `<span class="text-[14px] leading-[1.4] text-wa-textPrimary break-words whitespace-pre-wrap flex-1 min-w-[60px]">${escapeHTML(msg.text)}</span>`
+                            : ''
+                        }
+                        <span class="text-[10px] text-wa-textSecondary flex items-center gap-1 shrink-0 ml-auto translate-y-[2px]">
+                          ${msg.time}
+                          ${isMe ? renderStatusIcon(msg.status) : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    ${
+                      msg.reaction
+                        ? `
+                          <button
+                            type="button"
+                            onclick="toggleReaction('${msg.id}', '${msg.reaction}')"
+                            class="-mt-2 mx-2 bg-white rounded-full px-2 py-0.5 shadow-wa-sm border border-wa-borderDefault text-[13px] z-10"
+                          >
+                            ${msg.reaction}
+                          </button>
+                        `
+                        : ''
+                    }
+                  </div>
+                `;
+              })
+              .join('')}
+
+            <!-- TypingIndicator -->
+            ${
+              state.typingChatId === chat.id
+                ? `
+                  <div class="self-start bg-white rounded-[12px] px-[14px] py-[10px] shadow-wa-sm flex items-center gap-1.5 mt-1 animate-message">
+                    <span class="w-2 h-2 rounded-full bg-wa-textSecondary typing-dot"></span>
+                    <span class="w-2 h-2 rounded-full bg-wa-textSecondary typing-dot"></span>
+                    <span class="w-2 h-2 rounded-full bg-wa-textSecondary typing-dot"></span>
+                  </div>
+                `
+                : ''
+            }
+          </div>
+
+          <!-- Reply Preview Banner -->
+          ${
+            state.replyingTo
+              ? `
+                <div class="bg-wa-bgSecondary px-3 pt-2 pb-1 flex items-center gap-2 border-t border-wa-borderDefault">
+                  <div class="flex-1 bg-white border-l-4 border-wa-primary rounded-[6px] p-2 flex items-center justify-between">
+                    <div class="min-w-0">
+                      <div class="text-[12px] font-semibold text-wa-primary">
+                        Replying to ${state.replyingTo.sender === 'me' ? 'Yourself' : escapeHTML(chat.name)}
+                      </div>
+                      <div class="text-[12px] text-wa-textSecondary truncate">${escapeHTML(state.replyingTo.text || 'Attachment')}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onclick="state.replyingTo = null; render();"
+                      class="w-8 h-8 rounded-full hover:bg-wa-bgSecondary flex items-center justify-center text-wa-textSecondary"
+                    >
+                      <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+              `
+              : ''
+          }
+
+          <!-- MessageComposer -->
+          <div class="min-h-[60px] p-2 bg-wa-bgSecondary flex items-end gap-2 shrink-0 pb-safe">
+            ${
+              state.isRecordingVoice
+                ? `
+                  <div class="flex-1 h-[44px] bg-white rounded-[24px] px-4 flex items-center justify-between shadow-wa-sm">
+                    <div class="flex items-center gap-2.5 text-wa-danger">
+                      <span class="w-2.5 h-2.5 rounded-full bg-wa-danger animate-ping"></span>
+                      <span id="voice-timer" class="text-[15px] font-medium text-wa-textPrimary">0:00</span>
+                    </div>
+                    <button type="button" onclick="cancelVoiceRecording()" class="text-[13px] font-semibold text-wa-danger px-2">
+                      Cancel
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Send voice note"
+                    onclick="toggleVoiceRecording()"
+                    class="w-[44px] h-[44px] rounded-full bg-wa-primary hover:bg-wa-primaryHover text-white flex items-center justify-center shadow-wa-sm shrink-0"
+                  >
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                  </button>
+                `
+                : `
+                  <!-- AttachmentButton -->
+                  <button
+                    type="button"
+                    aria-label="Attach media or document"
+                    onclick="toggleOverlay('attachments')"
+                    class="w-[44px] h-[44px] rounded-full hover:bg-black/5 flex items-center justify-center text-wa-textSecondary shrink-0"
+                  >
+                    <i data-lucide="plus" class="w-6 h-6"></i>
+                  </button>
+
+                  <!-- Input Pill -->
+                  <div class="flex-1 min-h-[42px] bg-white rounded-[24px] px-3 py-1.5 flex items-end gap-2 shadow-wa-sm">
+                    <button
+                      type="button"
+                      aria-label="Insert emoji"
+                      onclick="toggleOverlay('emoji-picker')"
+                      class="w-8 h-8 rounded-full hover:bg-wa-bgSecondary flex items-center justify-center text-wa-textSecondary shrink-0 mb-0.5"
+                    >
+                      <i data-lucide="smile" class="w-[22px] h-[22px]"></i>
+                    </button>
+                    <textarea
+                      id="composer-input"
+                      rows="1"
+                      placeholder="Message"
+                      oninput="handleComposerInput(this)"
+                      onkeydown="handleComposerKeydown(event)"
+                      class="flex-1 max-h-[120px] bg-transparent text-[15px] text-wa-textPrimary placeholder-wa-textSecondary resize-none focus:outline-none py-1 leading-[1.35]"
+                    >${escapeHTML(state.composerText)}</textarea>
+                  </div>
+
+                  <!-- SendButton or VoiceButton -->
+                  ${
+                    state.composerText.trim().length > 0
+                      ? `
+                        <button
+                          type="button"
+                          aria-label="Send message"
+                          onclick="sendMessage()"
+                          class="w-[44px] h-[44px] rounded-full bg-wa-primary hover:bg-wa-primaryHover active:scale-95 transition-all text-white flex items-center justify-center shadow-wa-sm shrink-0"
+                        >
+                          <i data-lucide="send" class="w-5 h-5"></i>
+                        </button>
+                      `
+                      : `
+                        <button
+                          type="button"
+                          aria-label="Record voice message"
+                          onclick="toggleVoiceRecording()"
+                          class="w-[44px] h-[44px] rounded-full bg-wa-primary hover:bg-wa-primaryHover active:scale-95 transition-all text-white flex items-center justify-center shadow-wa-sm shrink-0"
+                        >
+                          <i data-lucide="mic" class="w-5 h-5"></i>
+                        </button>
+                      `
+                  }
+                `
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    function handleComposerInput(el) {
+      state.composerText = el.value;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+      // Re-render only button toggle if needed without losing textarea focus
+      const wasEmpty = el.dataset.empty === 'true';
+      const isEmpty = state.composerText.trim().length === 0;
+      if (wasEmpty !== isEmpty) {
+        const cursorPos = el.selectionStart;
+        render();
+        const newEl = document.getElementById('composer-input');
+        if (newEl) {
+          newEl.focus();
+          newEl.setSelectionRange(cursorPos, cursorPos);
+        }
+      }
+      el.dataset.empty = isEmpty;
+    }
+
+    function handleComposerKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // --- 5.4 StandalonePages ---
+    function renderStandalonePage() {
+      const page = state.standalonePage;
+      const chat = getActiveChat();
+
+      // PageHeader helper
+      const pageHeader = (title, backTarget = null) => `
+        <header class="h-[60px] bg-white px-4 flex items-center gap-3 border-b border-wa-borderDefault shrink-0">
+          <button
+            type="button"
+            aria-label="Go back"
+            onclick="state.standalonePage = ${backTarget ? `'${backTarget}'` : 'null'}; render();"
+            class="w-[44px] h-[44px] -ml-2 rounded-full hover:bg-wa-bgSecondary flex items-center justify-center text-wa-textPrimary"
+          >
+            <i data-lucide="arrow-left" class="w-[22px] h-[22px]"></i>
+          </button>
+          <h1 class="text-[18px] font-semibold text-wa-textPrimary">${escapeHTML(title)}</h1>
+        </header>
+      `;
+
+      // 1. ProfilePage
+      if (page === 'profile') {
+        return `
+          <div class="flex flex-col h-full bg-wa-bgSecondary overflow-y-auto">
+            ${pageHeader('Profile', 'settings')}
+            <div class="flex flex-col items-center py-8 bg-white border-b border-wa-borderDefault">
+              <div class="relative">
+                <img src="${state.user.avatar}" alt="Profile" class="w-[120px] h-[120px] rounded-full object-cover shadow-wa-sm" />
+                <button
+                  type="button"
+                  onclick="showToast('Profile photo updated')"
+                  class="w-10 h-10 rounded-full bg-wa-primary text-white flex items-center justify-center shadow-wa-md absolute bottom-0 right-0"
+                >
+                  <i data-lucide="camera" class="w-5 h-5"></i>
+                </button>
+              </div>
+              <h2 class="text-[22px] font-semibold text-wa-textPrimary mt-4">${escapeHTML(state.user.name)}</h2>
+            </div>
+
+            <div class="bg-white mt-2.5 divide-y divide-wa-borderDefault">
+              <div class="p-4 flex items-start gap-4">
+                <i data-lucide="user" class="w-5 h-5 text-wa-textSecondary mt-1"></i>
+                <div class="flex-1">
+                  <div class="text-[12px] font-medium text-wa-primary">Name</div>
+                  <div class="text-[15px] text-wa-textPrimary mt-0.5">${escapeHTML(state.user.name)}</div>
+                  <p class="text-[12px] text-wa-textSecondary mt-1">This is not your username or pin. This name will be visible to your WhatsApp contacts.</p>
+                </div>
+                <button type="button" onclick="promptEditProfile('name')" class="text-wa-primary p-2"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+              </div>
+
+              <div class="p-4 flex items-start gap-4">
+                <i data-lucide="info" class="w-5 h-5 text-wa-textSecondary mt-1"></i>
+                <div class="flex-1">
+                  <div class="text-[12px] font-medium text-wa-primary">About</div>
+                  <div class="text-[15px] text-wa-textPrimary mt-0.5">${escapeHTML(state.user.about)}</div>
+                </div>
+                <button type="button" onclick="promptEditProfile('about')" class="text-wa-primary p-2"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+              </div>
+
+              <div class="p-4 flex items-start gap-4">
+                <i data-lucide="phone" class="w-5 h-5 text-wa-textSecondary mt-1"></i>
+                <div class="flex-1">
+                  <div class="text-[12px] font-medium text-wa-primary">Phone</div>
+                  <div class="text-[15px] text-wa-textPrimary mt-0.5">${escapeHTML(state.user.phone)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. ContactDetailsPage
+      if (page === 'contact-details' && chat) {
+        return `
+          <div class="flex flex-col h-full bg-wa-bgSecondary overflow-y-auto">
+            ${pageHeader('Contact info')}
+            <div class="bg-white flex flex-col items-center py-6 px-4 text-center">
+              <img src="${chat.avatar}" alt="${escapeHTML(chat.name)}" class="w-[100px] h-[100px] rounded-full object-cover shadow-wa-sm" />
+              <h2 class="text-[22px] font-semibold text-wa-textPrimary mt-3">${escapeHTML(chat.name)}</h2>
+              <p class="text-[14px] text-wa-textSecondary mt-0.5">${escapeHTML(chat.phone)}</p>
+
+              <!-- contact_actions -->
+              <div class="grid grid-cols-4 gap-3 w-full max-w-[360px] mt-5">
+                ${[
+                  { icon: 'message-square', label: 'Message', action: "state.standalonePage = null; render();" },
+                  { icon: 'phone', label: 'Audio', action: "showToast('Starting audio call...')" },
+                  { icon: 'video', label: 'Video', action: "showToast('Starting video call...')" },
+                  { icon: 'search', label: 'Search', action: "state.standalonePage = null; state.chatSearchOpen = true; render();" }
+                ]
+                  .map(
+                    btn => `
+                    <button
+                      type="button"
+                      onclick="${btn.action}"
+                      class="flex flex-col items-center justify-center py-2.5 px-2 rounded-[12px] border border-wa-borderDefault hover:bg-wa-surfaceHover gap-1.5 text-wa-primary"
+                    >
+                      <i data-lucide="${btn.icon}" class="w-5 h-5"></i>
+                      <span class="text-[12px] font-medium text-wa-textPrimary">${btn.label}</span>
+                    </button>
+                  `
+                  )
+                  .join('')}
+              </div>
+            </div>
+
+            <!-- About Section -->
+            <div class="bg-white p-4 mt-2.5">
+              <div class="text-[13px] font-medium text-wa-textSecondary">About</div>
+              <div class="text-[15px] text-wa-textPrimary mt-1">${escapeHTML(chat.about)}</div>
+            </div>
+
+            <!-- Media Section -->
+            <div class="bg-white p-4 mt-2.5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[13px] font-medium text-wa-textSecondary">Media, links and docs</span>
+                <span class="text-[13px] text-wa-textSecondary flex items-center gap-1">
+                  ${chat.sharedMedia.length} <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </span>
+              </div>
+              ${
+                chat.sharedMedia.length > 0
+                  ? `<div class="grid grid-cols-3 gap-2">
+                      ${chat.sharedMedia
+                        .map(
+                          url => `
+                          <img
+                            src="${url}"
+                            onclick="openMediaViewer('${url}', 'Shared Media')"
+                            class="w-full h-24 object-cover rounded-[8px] cursor-pointer hover:opacity-90"
+                          />
+                        `
+                        )
+                        .join('')}
+                     </div>`
+                  : `<p class="text-[13px] text-wa-textTertiary">No media shared yet</p>`
+              }
+            </div>
+
+            <!-- Chat Details Entry -->
+            <button
+              type="button"
+              onclick="state.standalonePage = 'chat-details'; render();"
+              class="bg-white p-4 mt-2.5 flex items-center justify-between text-left hover:bg-wa-surfaceHover"
+            >
+              <div class="flex items-center gap-3">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5 text-wa-textSecondary"></i>
+                <div>
+                  <div class="text-[15px] font-medium text-wa-textPrimary">Chat settings & preferences</div>
+                  <div class="text-[12px] text-wa-textSecondary">Notifications, disappearing messages, wallpaper</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-5 h-5 text-wa-textSecondary"></i>
+            </button>
+          </div>
+        `;
+      }
+
+      // 3. ChatDetailsPage
+      if (page === 'chat-details' && chat) {
+        return `
+          <div class="flex flex-col h-full bg-wa-bgSecondary overflow-y-auto">
+            ${pageHeader('Chat Settings', 'contact-details')}
+
+            <div class="bg-white p-4 mb-[10px] divide-y divide-wa-borderDefault">
+              <div class="py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <i data-lucide="bell" class="w-5 h-5 text-wa-textSecondary"></i>
+                  <div>
+                    <div class="text-[15px] text-wa-textPrimary">Mute notifications</div>
+                    <div class="text-[12px] text-wa-textSecondary">${chat.muted ? 'Muted' : 'Off'}</div>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  ${chat.muted ? 'checked' : ''}
+                  onchange="toggleMuteChat('${chat.id}')"
+                  class="w-5 h-5 accent-wa-primary cursor-pointer"
+                />
+              </div>
+
+              <div class="py-3 flex items-center justify-between cursor-pointer" onclick="cycleDisappearing('${chat.id}')">
+                <div class="flex items-center gap-3">
+                  <i data-lucide="timer" class="w-5 h-5 text-wa-textSecondary"></i>
+                  <div>
+                    <div class="text-[15px] text-wa-textPrimary">Disappearing messages</div>
+                    <div class="text-[12px] text-wa-textSecondary">${chat.disappearing}</div>
+                  </div>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-wa-textSecondary"></i>
+              </div>
+
+              <div class="py-3 flex items-center justify-between cursor-pointer" onclick="cycleWallpaper('${chat.id}')">
+                <div class="flex items-center gap-3">
+                  <i data-lucide="image" class="w-5 h-5 text-wa-textSecondary"></i>
+                  <div>
+                    <div class="text-[15px] text-wa-textPrimary">Chat wallpaper</div>
+                    <div class="text-[12px] text-wa-textSecondary">Tap to cycle theme tint</div>
+                  </div>
+                </div>
+                <span class="w-6 h-6 rounded-full border border-wa-borderStrong" style="background:${chat.wallpaper}"></span>
+              </div>
+            </div>
+
+            <div class="bg-white p-4 mb-[10px] flex items-start gap-3">
+              <i data-lucide="lock" class="w-5 h-5 text-wa-primary mt-0.5"></i>
+              <div>
+                <div class="text-[15px] font-medium text-wa-textPrimary">Encryption</div>
+                <p class="text-[13px] text-wa-textSecondary mt-0.5">Messages and calls are end-to-end encrypted. Tap to verify security code.</p>
+              </div>
+            </div>
+
+            <div class="bg-white p-4 mb-[10px] space-y-3">
+              <button
+                type="button"
+                onclick="clearChatMessages('${chat.id}')"
+                class="w-full py-2.5 flex items-center gap-3 text-wa-danger font-medium text-[15px]"
+              >
+                <i data-lucide="eraser" class="w-5 h-5"></i>
+                Clear chat
+              </button>
+              <button
+                type="button"
+                onclick="deleteEntireChat('${chat.id}')"
+                class="w-full py-2.5 flex items-center gap-3 text-wa-danger font-medium text-[15px]"
+              >
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                Delete chat
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 4. SettingsPage
+      if (page === 'settings') {
+        const settingsItems = [
+          { icon: 'key-round', title: 'Account', desc: 'Security notifications, change PIN', action: 'lockApp()' },
+          { icon: 'lock', title: 'Privacy', desc: 'Block contacts, disappearing messages', action: "showToast('Privacy settings: Last seen visible to contacts')" },
+          { icon: 'message-square', title: 'Chats', desc: 'Theme, wallpapers, chat history', action: "showToast('Theme: Light Mode (WhatsApp Default)')" },
+          { icon: 'bell', title: 'Notifications', desc: 'Message, group & call tones', action: "showToast('Notifications enabled')" },
+          { icon: 'database', title: 'Storage and Data', desc: 'Network usage, auto-download', action: "showToast('142 MB used across 5 chats')" },
+          { icon: 'help-circle', title: 'Help', desc: 'Help center, contact us, privacy policy', action: "showToast('WhatsApp Mobile UI Design System v1.0')" },
+          { icon: 'info', title: 'App Information', desc: 'Version 1.0 • Mobile-First PWA', action: "showToast('Build v1.0.0 — Ready')" }
+        ];
+
+        return `
+          <div class="flex flex-col h-full bg-wa-bgSecondary overflow-y-auto">
+            ${pageHeader('Settings')}
+
+            <!-- ProfileSection -->
+            <div
+              role="button"
+              tabindex="0"
+              onclick="state.standalonePage = 'profile'; render();"
+              class="bg-white p-4 flex items-center gap-4 border-b border-wa-borderDefault cursor-pointer hover:bg-wa-surfaceHover"
+            >
+              <img src="${state.user.avatar}" alt="${escapeHTML(state.user.name)}" class="w-[56px] h-[56px] rounded-full object-cover" />
+              <div class="flex-1 min-w-0">
+                <div class="text-[18px] font-semibold text-wa-textPrimary truncate">${escapeHTML(state.user.name)}</div>
+                <div class="text-[13px] text-wa-textSecondary truncate">${escapeHTML(state.user.about)}</div>
+              </div>
+              <i data-lucide="qr-code" class="w-6 h-6 text-wa-primary"></i>
+            </div>
+
+            <!-- SettingsList -->
+            <div class="bg-white mt-2.5 divide-y divide-wa-borderSubtle">
+              ${settingsItems
+                .map(
+                  item => `
+                  <button
+                    type="button"
+                    onclick="${item.action}"
+                    class="w-full h-[64px] px-4 flex items-center gap-4 hover:bg-wa-surfaceHover text-left transition-colors"
+                  >
+                    <i data-lucide="${item.icon}" class="w-[24px] h-[24px] text-wa-textSecondary shrink-0"></i>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[16px] text-wa-textPrimary leading-tight">${item.title}</div>
+                      <div class="text-[13px] text-wa-textSecondary truncate mt-0.5">${item.desc}</div>
+                    </div>
+                  </button>
+                `
+                )
+                .join('')}
+            </div>
+
+            <div class="p-6 text-center">
+              <button
+                type="button"
+                onclick="lockApp()"
+                class="h-[44px] px-6 rounded-[8px] border border-wa-borderStrong text-wa-primary font-semibold text-[14px] hover:bg-white transition-colors"
+              >
+                Lock App with PIN
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      return '';
+    }
+
+    // --- 5.5 Fullscreen Viewers (MediaViewerPage & StatusViewerPage) ---
+    function openMediaViewer(url, caption) {
+      state.mediaViewerData = { url, caption };
+      render();
+    }
+
+    function renderMediaViewer() {
+      if (!state.mediaViewerData) return '';
+      return `
+        <div class="fixed inset-0 z-50 bg-black flex flex-col justify-between animate-modal">
+          <header class="h-[60px] px-4 flex items-center justify-between text-white bg-black/60">
+            <button type="button" onclick="state.mediaViewerData = null; render();" class="w-[44px] h-[44px] rounded-full hover:bg-white/10 flex items-center justify-center">
+              <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="showToast('Image saved to gallery')" class="w-[44px] h-[44px] rounded-full hover:bg-white/10 flex items-center justify-center">
+                <i data-lucide="download" class="w-5 h-5"></i>
+              </button>
+              <button type="button" onclick="showToast('Share sheet opened')" class="w-[44px] h-[44px] rounded-full hover:bg-white/10 flex items-center justify-center">
+                <i data-lucide="share-2" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </header>
+
+          <div class="flex-1 flex items-center justify-center p-4 overflow-hidden">
+            <img src="${state.mediaViewerData.url}" alt="Media preview" class="max-w-full max-h-full object-contain rounded-lg" />
+          </div>
+
+          <div class="p-4 text-center text-white text-[14px] bg-black/60 pb-safe">
+            ${escapeHTML(state.mediaViewerData.caption)}
+          </div>
+        </div>
+      `;
+    }
+
+    function openStatusViewer(statusIndex = 0) {
+      state.statusViewerData = { statusIndex, slideIndex: 0 };
+      render();
+      startStatusAutoAdvance();
+    }
+
+    function startStatusAutoAdvance() {
+      clearTimeout(statusTimer);
+      if (!state.statusViewerData) return;
+      statusTimer = setTimeout(() => {
+        nextStatusSlide();
+      }, 4500);
+    }
+
+    function nextStatusSlide() {
+      const currentStatus = STATUS_UPDATES[state.statusViewerData.statusIndex];
+      if (!currentStatus) return closeStatusViewer();
+
+      if (state.statusViewerData.slideIndex + 1 < currentStatus.slides.length) {
+        state.statusViewerData.slideIndex += 1;
+        render();
+        startStatusAutoAdvance();
+      } else if (state.statusViewerData.statusIndex + 1 < STATUS_UPDATES.length) {
+        state.statusViewerData.statusIndex += 1;
+        state.statusViewerData.slideIndex = 0;
+        render();
+        startStatusAutoAdvance();
+      } else {
+        closeStatusViewer();
+      }
+    }
+
+    function prevStatusSlide() {
+      if (state.statusViewerData.slideIndex > 0) {
+        state.statusViewerData.slideIndex -= 1;
+        render();
+        startStatusAutoAdvance();
+      } else if (state.statusViewerData.statusIndex > 0) {
+        state.statusViewerData.statusIndex -= 1;
+        state.statusViewerData.slideIndex = 0;
+        render();
+        startStatusAutoAdvance();
+      }
+    }
+
+    function closeStatusViewer() {
+      clearTimeout(statusTimer);
+      state.statusViewerData = null;
+      render();
+    }
+
+    function renderStatusViewer() {
+      if (!state.statusViewerData) return '';
+      const status = STATUS_UPDATES[state.statusViewerData.statusIndex];
+      if (!status) return '';
+      const slide = status.slides[state.statusViewerData.slideIndex];
+
+      return `
+        <div class="fixed inset-0 z-50 bg-[#111B21] flex flex-col justify-between text-white">
+          <!-- Progress Bars & Header -->
+          <div class="pt-3 px-3 bg-gradient-to-b from-black/70 to-transparent z-20 pt-safe">
+            <div class="flex gap-1.5 mb-3">
+              ${status.slides
+                .map(
+                  (_, idx) => `
+                  <div class="flex-1 h-[3px] rounded-full bg-white/40 overflow-hidden">
+                    <div class="h-full bg-white transition-all duration-300 ${
+                      idx <= state.statusViewerData.slideIndex ? 'w-full' : 'w-0'
+                    }"></div>
+                  </div>
+                `
+                )
+                .join('')}
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="closeStatusViewer()" class="w-[44px] h-[44px] -ml-2 rounded-full hover:bg-white/10 flex items-center justify-center">
+                  <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                </button>
+                <img src="${status.avatar}" class="w-10 h-10 rounded-full object-cover border border-white/40" />
+                <div>
+                  <div class="text-[15px] font-semibold">${escapeHTML(status.userName)}</div>
+                  <div class="text-[12px] text-white/75">${escapeHTML(status.time)}</div>
+                </div>
+              </div>
+              <button type="button" onclick="closeStatusViewer()" class="w-[44px] h-[44px] rounded-full hover:bg-white/10 flex items-center justify-center">
+                <i data-lucide="x" class="w-6 h-6"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Status Image & Touch Navigation Zones -->
+          <div class="flex-1 relative flex items-center justify-center overflow-hidden">
+            <img src="${slide.image}" alt="Status" class="max-w-full max-h-full object-contain" />
+            <div onclick="prevStatusSlide()" class="absolute inset-y-0 left-0 w-1/3 cursor-pointer"></div>
+            <div onclick="nextStatusSlide()" class="absolute inset-y-0 right-0 w-2/3 cursor-pointer"></div>
+          </div>
+
+          <!-- Caption & Reply Input -->
+          <div class="p-4 bg-gradient-to-t from-black/80 to-transparent flex flex-col items-center gap-3 pb-safe z-20">
+            <p class="text-[15px] text-center max-w-[420px]">${escapeHTML(slide.caption)}</p>
+            <form
+              onsubmit="event.preventDefault(); showToast('Reply sent to ${escapeHTML(status.userName)}'); closeStatusViewer();"
+              class="w-full max-w-[420px] flex items-center gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Reply to ${escapeHTML(status.userName)}..."
+                class="flex-1 h-[44px] px-4 rounded-full bg-transparent border border-white text-white placeholder-white/70 text-[14px] focus:outline-none"
+              />
+              <button type="submit" class="w-[44px] h-[44px] rounded-full bg-wa-primary text-white flex items-center justify-center shrink-0">
+                <i data-lucide="send" class="w-5 h-5"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 6. OVERLAYS (Dropdowns, BottomSheet, AlertDialog)
+    // ==========================================
+    function toggleOverlay(type, data = null) {
+      if (state.overlay && state.overlay.type === type) {
+        state.overlay = null;
+      } else {
+        state.overlay = { type, data };
+      }
+      renderOverlays();
+    }
+
+    function openMessageActions(msgId) {
+      const chat = getActiveChat();
+      if (!chat) return;
+      const msg = chat.messages.find(m => m.id === msgId);
+      if (!msg) return;
+      toggleOverlay('message-actions', msg);
+    }
+
+    function openAlertDialog(title, description, confirmLabel = 'OK', onConfirm = null) {
+      state.overlay = {
+        type: 'alert',
+        data: { title, description, confirmLabel, onConfirm }
+      };
+      renderOverlays();
+    }
+
+    function renderOverlays() {
+      const root = document.getElementById('overlay-root');
+      if (!state.overlay) {
+        root.innerHTML = '';
+        return;
+      }
+
+      const { type, data } = state.overlay;
+
+      // 1. Main Header Dropdown
+      if (type === 'main-menu') {
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-40">
+            <div onclick="event.stopPropagation()" class="absolute top-[56px] left-[180px] md:left-[210px] w-[200px] bg-white rounded-[8px] shadow-wa-md py-1.5 border border-wa-borderDefault animate-modal">
+              <button type="button" onclick="state.overlay=null; toggleOverlay('new-chat');" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover flex items-center gap-3">
+                New group
+              </button>
+              <button type="button" onclick="state.overlay=null; openStatusViewer(0);" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover flex items-center gap-3">
+                Status updates
+              </button>
+              <button type="button" onclick="state.overlay=null; state.standalonePage='settings'; render();" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover flex items-center gap-3">
+                Settings
+              </button>
+              <button type="button" onclick="lockApp()" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-danger hover:bg-wa-surfaceHover flex items-center gap-3">
+                Lock app
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Chat Header Dropdown
+      if (type === 'chat-menu') {
+        const chat = getActiveChat();
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-40">
+            <div onclick="event.stopPropagation()" class="absolute top-[56px] right-4 w-[210px] bg-white rounded-[8px] shadow-wa-md py-1.5 border border-wa-borderDefault animate-modal">
+              <button type="button" onclick="state.overlay=null; state.standalonePage='contact-details'; render();" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover">
+                Contact info
+              </button>
+              <button type="button" onclick="state.overlay=null; state.chatSearchOpen=true; render();" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover">
+                Search
+              </button>
+              <button type="button" onclick="state.overlay=null; toggleMuteChat('${chat.id}');" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover">
+                ${chat.muted ? 'Unmute notifications' : 'Mute notifications'}
+              </button>
+              <button type="button" onclick="state.overlay=null; state.standalonePage='chat-details'; render();" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-textPrimary hover:bg-wa-surfaceHover">
+                Wallpaper & settings
+              </button>
+              <button type="button" onclick="state.overlay=null; clearChatMessages('${chat.id}');" class="w-full h-[44px] px-4 text-left text-[14px] text-wa-danger hover:bg-wa-surfaceHover">
+                Clear chat
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. Attachments BottomSheet
+      if (type === 'attachments') {
+        const items = [
+          { icon: 'image', label: 'Photos', color: 'bg-[#007BFC]', action: () => sendMessage({ image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80', text: 'Shared a workspace snapshot!' }) },
+          { icon: 'camera', label: 'Camera', color: 'bg-[#FF2E74]', action: () => sendMessage({ image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80', text: 'Captured live' }) },
+          { icon: 'file-text', label: 'Document', color: 'bg-[#7F66FF]', action: () => sendMessage({ document: { name: 'Design_System_v1.pdf', size: '2.1 MB', pages: '24 pages' } }) },
+          { icon: 'map-pin', label: 'Location', color: 'bg-[#1FA855]', action: () => sendMessage({ text: '📍 Live Location: Losari Beachfront, Makassar' }) }
+        ];
+
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-40 bg-wa-overlay flex items-end justify-center">
+            <div onclick="event.stopPropagation()" class="w-full max-w-[480px] bg-white rounded-t-[20px] p-5 pb-8 shadow-wa-lg animate-sheet">
+              <div class="w-[40px] h-[4px] bg-wa-borderStrong rounded-full mx-auto mb-5"></div>
+              <div class="grid grid-cols-4 gap-4 text-center">
+                ${items
+                  .map(
+                    (item, i) => `
+                    <button
+                      type="button"
+                      id="att-btn-${i}"
+                      class="flex flex-col items-center gap-2 py-2 rounded-xl hover:bg-wa-surfaceHover"
+                    >
+                      <div class="w-14 h-14 rounded-full ${item.color} text-white flex items-center justify-center shadow-wa-sm">
+                        <i data-lucide="${item.icon}" class="w-6 h-6"></i>
+                      </div>
+                      <span class="text-[12px] font-medium text-wa-textPrimary">${item.label}</span>
+                    </button>
+                  `
+                  )
+                  .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        items.forEach((item, i) => {
+          document.getElementById(`att-btn-${i}`).onclick = item.action;
+        });
+        return;
+      }
+
+      // 4. Emoji Picker Popover
+      if (type === 'emoji-picker') {
+        const emojis = ['😀', '😂', '🥰', '😎', '🤔', '👍', '❤️', '🔥', '🎉', '🙏', '☕', '🚀', '✨', '💯', '👏', '🙌'];
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-40 flex items-end justify-center md:justify-end md:pr-8 pb-[72px]">
+            <div onclick="event.stopPropagation()" class="w-[320px] bg-white rounded-[12px] shadow-wa-lg border border-wa-borderDefault p-3 animate-modal">
+              <div class="text-[12px] font-semibold text-wa-textSecondary mb-2 px-1">Quick Emojis</div>
+              <div class="grid grid-cols-8 gap-1">
+                ${emojis
+                  .map(
+                    e => `
+                    <button
+                      type="button"
+                      onclick="state.composerText += '${e}'; state.overlay = null; render();"
+                      class="w-9 h-9 rounded-lg hover:bg-wa-bgSecondary text-[20px] flex items-center justify-center"
+                    >
+                      ${e}
+                    </button>
+                  `
+                  )
+                  .join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 5. Message Context Menu & Reaction Bar
+      if (type === 'message-actions' && data) {
+        const quickReactions = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-40 bg-wa-overlay flex items-end md:items-center justify-center p-4">
+            <div onclick="event.stopPropagation()" class="w-full max-w-[340px] flex flex-col gap-2.5 animate-modal">
+              <!-- Reaction Bar -->
+              <div class="bg-white rounded-full px-3 py-2 shadow-wa-lg flex items-center justify-between">
+                ${quickReactions
+                  .map(
+                    emoji => `
+                    <button
+                      type="button"
+                      onclick="toggleReaction('${data.id}', '${emoji}')"
+                      class="w-10 h-10 rounded-full hover:bg-wa-bgSecondary text-[22px] flex items-center justify-center transition-transform hover:scale-110"
+                    >
+                      ${emoji}
+                    </button>
+                  `
+                  )
+                  .join('')}
+              </div>
+
+              <!-- ContextMenu Actions -->
+              <div class="bg-white rounded-[12px] shadow-wa-lg overflow-hidden divide-y divide-wa-borderSubtle">
+                <button
+                  type="button"
+                  onclick="state.replyingTo = state.overlay.data; state.overlay = null; render();"
+                  class="w-full h-[48px] px-4 flex items-center justify-between text-[15px] text-wa-textPrimary hover:bg-wa-surfaceHover"
+                >
+                  <span>Reply</span>
+                  <i data-lucide="reply" class="w-5 h-5 text-wa-textSecondary"></i>
+                </button>
+                <button
+                  type="button"
+                  onclick="copyText('${escapeHTML(data.text || '')}')"
+                  class="w-full h-[48px] px-4 flex items-center justify-between text-[15px] text-wa-textPrimary hover:bg-wa-surfaceHover"
+                >
+                  <span>Copy</span>
+                  <i data-lucide="copy" class="w-5 h-5 text-wa-textSecondary"></i>
+                </button>
+                <button
+                  type="button"
+                  onclick="deleteMessage('${data.id}')"
+                  class="w-full h-[48px] px-4 flex items-center justify-between text-[15px] text-wa-danger hover:bg-wa-surfaceHover"
+                >
+                  <span>Delete</span>
+                  <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 6. New Chat Modal
+      if (type === 'new-chat') {
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-40 bg-wa-overlay flex items-center justify-center p-4">
+            <div onclick="event.stopPropagation()" class="w-full max-w-[420px] bg-white rounded-[16px] shadow-wa-lg overflow-hidden animate-modal">
+              <div class="h-[60px] px-4 border-b border-wa-borderDefault flex items-center justify-between">
+                <h3 class="text-[18px] font-semibold text-wa-textPrimary">New Chat</h3>
+                <button type="button" onclick="toggleOverlay(null)" class="w-[44px] h-[44px] rounded-full hover:bg-wa-bgSecondary flex items-center justify-center">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+              </div>
+              <form
+                onsubmit="event.preventDefault(); createNewChat(this.contactName.value, this.contactPhone.value);"
+                class="p-5 space-y-4"
+              >
+                <div>
+                  <label class="block text-[13px] font-medium text-wa-textSecondary mb-1">Contact Name</label>
+                  <input
+                    name="contactName"
+                    required
+                    placeholder="e.g. Hendra Wijaya"
+                    class="w-full min-h-[44px] px-4 rounded-[8px] bg-wa-bgSecondary border border-transparent focus:border-wa-primary focus:bg-white text-[14px] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[13px] font-medium text-wa-textSecondary mb-1">Phone Number</label>
+                  <input
+                    name="contactPhone"
+                    placeholder="+62 812-0000-1111"
+                    class="w-full min-h-[44px] px-4 rounded-[8px] bg-wa-bgSecondary border border-transparent focus:border-wa-primary focus:bg-white text-[14px] focus:outline-none"
+                  />
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onclick="toggleOverlay(null)"
+                    class="h-[44px] px-5 rounded-[8px] bg-wa-bgSecondary text-wa-textPrimary font-semibold text-[14px]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="h-[44px] px-5 rounded-[8px] bg-wa-primary hover:bg-wa-primaryHover text-white font-semibold text-[14px]"
+                  >
+                    Start Chat
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
+      // 7. AlertDialog
+      if (type === 'alert' && data) {
+        root.innerHTML = `
+          <div onclick="toggleOverlay(null)" class="fixed inset-0 z-50 bg-wa-overlay flex items-center justify-center p-4">
+            <div onclick="event.stopPropagation()" class="w-full max-w-[320px] bg-white rounded-[12px] p-6 shadow-wa-lg animate-modal">
+              <h3 class="text-[18px] font-semibold text-wa-textPrimary">${escapeHTML(data.title)}</h3>
+              <p class="text-[14px] text-wa-textSecondary mt-2 leading-relaxed">${escapeHTML(data.description)}</p>
+              <div class="flex justify-end gap-2 mt-6">
+                <button
+                  type="button"
+                  onclick="toggleOverlay(null)"
+                  class="h-[44px] px-4 rounded-[8px] text-wa-primary font-semibold text-[14px] hover:bg-wa-primarySubtle"
+                >
+                  ${escapeHTML(data.confirmLabel)}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // 7. EXTRA INTERACTION HANDLERS
+    // ==========================================
+    function createNewChat(name, phone) {
+      if (!name.trim()) return;
+      const newChat = {
+        id: 'chat-' + Date.now(),
+        name: name.trim(),
+        phone: phone.trim() || '+62 812-0000-0000',
+        about: 'Hey there! I am using WhatsApp.',
+        avatar: `https://placehold.co/120x120/008069/FFFFFF?text=${encodeURIComponent(name.trim()[0].toUpperCase())}`,
+        online: true,
+        lastSeen: 'online',
+        unreadCount: 0,
+        isGroup: false,
+        pinned: false,
+        muted: false,
+        disappearing: 'Off',
+        wallpaper: '#EFEAE2',
+        sharedMedia: [],
+        sharedLinks: [],
+        messages: []
+      };
+      state.chats.unshift(newChat);
+      state.overlay = null;
+      selectChat(newChat.id);
+      showToast('Started chat with ' + newChat.name);
+    }
+
+    function copyText(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Message copied to clipboard');
+      } catch (err) {
+        showToast('Unable to copy text');
+      }
+      document.body.removeChild(textarea);
+      state.overlay = null;
+      renderOverlays();
+    }
+
+    function toggleMuteChat(chatId) {
+      const chat = state.chats.find(c => c.id === chatId);
+      if (chat) {
+        chat.muted = !chat.muted;
+        render();
+        showToast(chat.muted ? 'Notifications muted' : 'Notifications unmuted');
+      }
+    }
+
+    function cycleDisappearing(chatId) {
+      const chat = state.chats.find(c => c.id === chatId);
+      if (!chat) return;
+      const options = ['Off', '24 hours', '7 days', '90 days'];
+      const next = options[(options.indexOf(chat.disappearing) + 1) % options.length];
+      chat.disappearing = next;
+      render();
+      showToast('Disappearing messages: ' + next);
+    }
+
+    function cycleWallpaper(chatId) {
+      const chat = state.chats.find(c => c.id === chatId);
+      if (!chat) return;
+      const tints = ['#EFEAE2', '#E7FCEB', '#E3F2FD', '#F3E5F5', '#FFF8E1'];
+      const next = tints[(tints.indexOf(chat.wallpaper) + 1) % tints.length];
+      chat.wallpaper = next;
+      render();
+      showToast('Chat wallpaper updated');
+    }
+
+    function clearChatMessages(chatId) {
+      const chat = state.chats.find(c => c.id === chatId);
+      if (chat) {
+        chat.messages = [];
+        state.standalonePage = null;
+        render();
+        showToast('Chat cleared');
+      }
+    }
+
+    function deleteEntireChat(chatId) {
+      state.chats = state.chats.filter(c => c.id !== chatId);
+      if (state.activeChatId === chatId) {
+        state.activeChatId = isDesktopOrTablet() ? state.chats[0]?.id || null : null;
+      }
+      state.standalonePage = null;
+      render();
+      showToast('Chat deleted');
+    }
+
+    function promptEditProfile(field) {
+      const newVal = field === 'name' ? 'Nadia Putri ✨' : 'Designing clean mobile interfaces';
+      state.user[field] = newVal;
+      render();
+      showToast('Profile updated');
+    }
+
+    // ==========================================
+    // 8. MAIN APPLICATION SHELL RENDERER
+    // ==========================================
+    function render() {
+      const appEl = document.getElementById('app');
+
+      if (!state.isAuthenticated) {
+        appEl.innerHTML = renderAuthScreen() + (state.overlay ? '' : '');
+        renderOverlays();
+        lucide.createIcons();
+        return;
+      }
+
+      const desktop = isDesktopOrTablet();
+
+      // Mobile Single-Column Routing
+      if (!desktop) {
+        let mobileContent = '';
+        if (state.standalonePage) {
+          mobileContent = renderStandalonePage();
+        } else if (state.activeChatId) {
+          mobileContent = renderChatPage();
+        } else {
+          mobileContent = renderChatsPage();
+        }
+
+        appEl.innerHTML = `
+          <div class="w-full max-w-[480px] h-[100dvh] bg-white flex flex-col overflow-hidden shadow-wa-lg relative">
+            ${mobileContent}
+          </div>
+          ${renderMediaViewer()}
+          ${renderStatusViewer()}
+        `;
+      } else {
+        // Tablet & Desktop Adaptive Two-Panel Layout (max_content_width: 1600px)
+        const rightPanelContent = state.standalonePage ? renderStandalonePage() : renderChatPage();
+
+        appEl.innerHTML = `
+          <div class="w-full max-w-[1600px] h-[100dvh] lg:h-[96dvh] lg:my-auto lg:rounded-[12px] lg:shadow-wa-lg bg-white flex overflow-hidden border border-wa-borderDefault relative">
+            <!-- Left Sidebar (ChatsPage) -->
+            <aside class="w-[360px] lg:w-[420px] h-full border-r border-wa-borderDefault shrink-0 flex flex-col relative">
+              ${renderChatsPage()}
+            </aside>
+
+            <!-- Right Conversation / Standalone Panel -->
+            <main class="flex-1 h-full min-w-0 flex flex-col relative">
+              ${rightPanelContent}
+            </main>
+          </div>
+          ${renderMediaViewer()}
+          ${renderStatusViewer()}
+        `;
+      }
+
+      renderOverlays();
+      lucide.createIcons();
+    }
+
+    // Handle Responsive Resize & Keyboard PIN Entry
+    window.addEventListener('resize', () => {
+      if (state.isAuthenticated && isDesktopOrTablet() && !state.activeChatId && state.chats.length > 0) {
+        state.activeChatId = state.chats[0].id;
+      }
+      render();
+    });
+
+    window.addEventListener('keydown', e => {
+      if (!state.isAuthenticated) {
+        if (/^[0-9]$/.test(e.key)) {
+          handlePinDigit(e.key);
+        } else if (e.key === 'Backspace') {
+          handlePinDelete();
+        }
+      }
+    });
+
+    // Initial Render
+    window.onload = function () {
+      render();
+    };
+  </script>
+</body>
+</html>
